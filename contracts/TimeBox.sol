@@ -2,22 +2,14 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
-contract TimeBox {
+contract TimeBox is Ownable {
     event Withdraw(address recipient, uint256 amount);
     event SetupTimeBox(uint256 block, uint256 lockedAt);
     event Received(address, uint256);
 
-    address public owner = msg.sender;
     uint256 public lockedAt;
-
-    modifier restricted() {
-        require(
-            msg.sender == owner,
-            "This function is restricted to the contract's owner"
-        );
-        _;
-    }
 
     constructor(uint256 _lockedAtInDays) payable {
         lockedAt = SafeMath.add(
@@ -34,7 +26,11 @@ contract TimeBox {
         emit Received(msg.sender, msg.value);
     }
 
-    function withdraw(address payable recipient) public restricted {
+    function renounceOwnership() public override virtual onlyOwner {
+        /* disable renounce function to don't loss funds */
+    }
+
+    function withdraw(address payable recipient) public onlyOwner {
         require(block.timestamp >= lockedAt, "Too early, be patient padawan.");
         require(
             recipient != address(0),
