@@ -6,6 +6,7 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract TimeBox {
     event Withdraw(address recipient, uint256 amount);
     event SetupTimeBox(uint256 block, uint256 lockedAt);
+    event Received(address, uint256);
 
     address public owner = msg.sender;
     uint256 public lockedAt;
@@ -18,7 +19,7 @@ contract TimeBox {
         _;
     }
 
-    constructor(uint256 _lockedAtInDays) {
+    constructor(uint256 _lockedAtInDays) payable {
         lockedAt = SafeMath.add(
             block.timestamp,
             SafeMath.mul(
@@ -27,6 +28,10 @@ contract TimeBox {
             )
         );
         emit SetupTimeBox(block.number, lockedAt);
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 
     function withdraw(address payable recipient) public restricted {
@@ -42,7 +47,8 @@ contract TimeBox {
         recipient.transfer(address(this).balance);
         emit Withdraw(recipient, address(this).balance);
     }
+
     function getBalance() public view returns (uint256) {
-      return address(this).balance;
+        return address(this).balance;
     }
 }
